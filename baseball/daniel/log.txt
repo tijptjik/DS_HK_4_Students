@@ -1,0 +1,562 @@
+
+In [1]:
+
+!pwd
+/home/ubuntu/baseball
+In [2]:
+
+!ls -l
+total 54044
+-rw-rw-r-- 1 ubuntu ubuntu    19950 Jan  1 14:58 Baseball assignment (all).ipynb
+-rw-rw-r-- 1 ubuntu ubuntu    87673 Jan  2 01:04 Baseball assignment (linear regression with JMP PLS output with significant coefficients).ipynb
+-rw-rw-r-- 1 ubuntu ubuntu   262097 Jan  2 01:37 Baseball assignment (only linear regression).ipynb
+-rw-rw-r-- 1 ubuntu ubuntu     8346 Jan  1 14:58 Baseball assignment (only Logistic Regression).ipynb
+-rw-rw-r-- 1 ubuntu ubuntu      732 Jan  2 16:20 Baseball challenge due 11Jan noon.ipynb
+-rw-rw-r-- 1 ubuntu ubuntu   513680 Jan  1 10:09 baseball_test.csv
+-rw-rw-r-- 1 ubuntu ubuntu 36072591 Jan  1 10:10 baseball_training.csv
+-rw-rw-r-- 1 ubuntu ubuntu    87712 Jan  1 11:01 Logistic expression - home work.ipynb
+-rw-rw-r-- 1 ubuntu ubuntu     1413 Jan  1 12:45 training_check_dtypes.csv
+-rw-rw-r-- 1 ubuntu ubuntu     1237 Jan  1 10:26 training_check_null.csv
+-rw-rw-r-- 1 ubuntu ubuntu     1224 Jan  1 11:57 training_check_other_null.csv
+-rw-rw-r-- 1 ubuntu ubuntu  9898085 Jan  1 12:14 training_salary_filled_null.csv
+-rw-rw-r-- 1 ubuntu ubuntu  8356554 Jan  1 11:27 training_salary_not_null.csv
+In [3]:
+
+import pandas as pd
+from sklearn import linear_model, metrics
+In [4]:
+
+training = pd.read_csv('baseball_training.csv')
+test = pd.read_csv('baseball_test.csv')
+In [6]:
+
+training.count()
+Out[6]:
+playerID        96737
+yearID          96737
+teamID          96737
+birthYear       96537
+birthMonth      96118
+birthDay        95705
+birthCountry    96643
+birthState      93440
+birthCity       96242
+deathYear       42520
+deathMonth      42519
+deathDay        42517
+deathCountry    42514
+deathState      42303
+deathCity       42497
+...
+SH_pitching          0
+SF_pitching          0
+GIDP_pitching        0
+CS_fielding       7980
+SB_fielding       7980
+WP_fielding       5274
+PB               12726
+DP               88237
+E                88236
+A                88237
+PO               88238
+InnOuts          56713
+GS               56713
+G                88290
+salary           22117
+Length: 91, dtype: int64
+In [7]:
+
+training_salary_not_null = training[training['salary'].notnull()]
+In [8]:
+
+training_salary_not_null.count()
+Out[8]:
+playerID        22117
+yearID          22117
+teamID          22117
+birthYear       22117
+birthMonth      22117
+birthDay        22117
+birthCountry    22117
+birthState      20944
+birthCity       22080
+deathYear         298
+deathMonth        298
+deathDay          298
+deathCountry      298
+deathState        291
+deathCity         298
+...
+SH_pitching          0
+SF_pitching          0
+GIDP_pitching        0
+CS_fielding       3393
+SB_fielding       3393
+WP_fielding       1820
+PB                3393
+DP               21630
+E                21630
+A                21630
+PO               21630
+InnOuts          21630
+GS               21630
+G                21646
+salary           22117
+Length: 91, dtype: int64
+In [9]:
+
+training_salary_filled_null = training_salary_not_null.fillna(0)
+In [10]:
+
+training_salary_filled_null.count()
+Out[10]:
+playerID        22117
+yearID          22117
+teamID          22117
+birthYear       22117
+birthMonth      22117
+birthDay        22117
+birthCountry    22117
+birthState      22117
+birthCity       22117
+deathYear       22117
+deathMonth      22117
+deathDay        22117
+deathCountry    22117
+deathState      22117
+deathCity       22117
+...
+SH_pitching      22117
+SF_pitching      22117
+GIDP_pitching    22117
+CS_fielding      22117
+SB_fielding      22117
+WP_fielding      22117
+PB               22117
+DP               22117
+E                22117
+A                22117
+PO               22117
+InnOuts          22117
+GS               22117
+G                22117
+salary           22117
+Length: 91, dtype: int64
+In [11]:
+
+import pandas as pd
+from sklearn import linear_model, metrics
+In [12]:
+
+# except the following fields in regression u'playerID', u'yearID', u'teamID', u'birthYear', u'birthMonth', 
+# u'birthDay', u'birthCountry', u'birthState', u'birthCity', u'deathYear', u'deathMonth', u'deathDay',
+#u'deathCountry', u'deathState', u'deathCity', u'nameFirst', u'nameLast', u'nameGiven'
+# SH_pitching, SF_pitching, GIDP_pitching
+# 'bats', 'throws', 'debut','finalGame', 'retroID', 'bbrefID', 'lgID' , 'G_dh', 'G_ph', 'G_pr', are dtyps = objects,and will be ignored
+ 
+In [13]:
+
+train_X = training_salary_filled_null[['weight', 'height', 'G_all', 'G_defense', 'G_p', 'G_c', 'G_1b', 'G_2b', 'G_3b', 'G_ss', 'G_lf', 'G_cf', 'G_rf', 'G_of', 'AB', 'R_batting', 'H_batting', '2B', '3B', 'HR_batting', 'RBI', 'SB_batting', 'CS_batting', 'BB_batting', 'SO_batting', 'IBB_batting', 'HBP_batting', 'SH_batting', 'SF_batting', 'GIDP_batting', 'W', 'L', 'CG', 'SHO', 'SV', 'IPouts', 'H_pitching', 'ER', 'HR_pitching', 'BB_pitching', 'SO_pitching', 'IBB_pitching', 'WP_pitching', 'HBP_pitching', 'BK', 'BFP', 'GF', 'R_pitching', 'CS_fielding', 'SB_fielding', 'WP_fielding', 'PB', 'DP', 'E', 'A', 'PO', 'InnOuts', 'GS', 'G']].values
+train_y = training_salary_filled_null['salary'].values
+In [14]:
+
+lm = linear_model.Ridge()
+lm.fit(train_X, train_y)
+Out[14]:
+Ridge(alpha=1.0, copy_X=True, fit_intercept=True, max_iter=None,
+   normalize=False, solver='auto', tol=0.001)
+In [15]:
+
+print 'R-Squared:',lm.score(train_X, train_y)
+R-Squared: 0.277867939329
+In [16]:
+
+print 'MSE:',metrics.mean_squared_error(lm.predict(train_X), train_y)
+MSE: 6.42412037146e+12
+In [ ]:
+
+# use JMP partial least square to check significnat coefficient to find
+# # ['HR_batting', 'IBB_batting', 'HBP_batting', 'GDP_batting', 'W', 'L', 'SHO', 'SV'
+In [17]:
+
+train_X =  training_salary_filled_null[['HR_batting', 'IBB_batting', 'HBP_batting', 'GIDP_batting', 'W', 'L', 'SHO', 'SV']].values
+train_y =  training_salary_filled_null['salary'].values
+In [18]:
+
+lm = linear_model.Ridge()
+lm.fit(train_X, train_y)
+Out[18]:
+Ridge(alpha=1.0, copy_X=True, fit_intercept=True, max_iter=None,
+   normalize=False, solver='auto', tol=0.001)
+In [19]:
+
+print 'R-Squared:',lm.score(train_X, train_y)
+R-Squared: 0.168624686507
+In [20]:
+
+print 'MSE:',metrics.mean_squared_error(lm.predict(train_X), train_y)
+MSE: 7.39595342544e+12
+In [23]:
+
+# So, the best linear regression is using the following factors
+# 'weight', 'height', 'G_all', 'G_defense', 'G_p', 'G_c', 'G_1b', 'G_2b', 'G_3b', 'G_ss', 'G_lf', 'G_cf', 'G_rf', 'G_of', 'AB', 'R_batting', 'H_batting', '2B', '3B', 'HR_batting', 'RBI', 'SB_batting', 'CS_batting', 'BB_batting', 'SO_batting', 'IBB_batting', 'HBP_batting', 'SH_batting', 'SF_batting', 'GIDP_batting', 'W', 'L', 'CG', 'SHO', 'SV', 'IPouts', 'H_pitching', 'ER', 'HR_pitching', 'BB_pitching', 'SO_pitching', 'IBB_pitching', 'WP_pitching', 'HBP_pitching', 'BK', 'BFP', 'GF', 'R_pitching', 'CS_fielding', 'SB_fielding', 'WP_fielding', 'PB', 'DP', 'E', 'A', 'PO', 'InnOuts', 'GS', 'G'
+ 
+train_X = training_salary_filled_null[['weight', 'height', 'G_all', 'G_defense', 'G_p', 'G_c', 'G_1b', 'G_2b', 'G_3b', 'G_ss', 'G_lf', 'G_cf', 'G_rf', 'G_of', 'AB', 'R_batting', 'H_batting', '2B', '3B', 'HR_batting', 'RBI', 'SB_batting', 'CS_batting', 'BB_batting', 'SO_batting', 'IBB_batting', 'HBP_batting', 'SH_batting', 'SF_batting', 'GIDP_batting', 'W', 'L', 'CG', 'SHO', 'SV', 'IPouts', 'H_pitching', 'ER', 'HR_pitching', 'BB_pitching', 'SO_pitching', 'IBB_pitching', 'WP_pitching', 'HBP_pitching', 'BK', 'BFP', 'GF', 'R_pitching', 'CS_fielding', 'SB_fielding', 'WP_fielding', 'PB', 'DP', 'E', 'A', 'PO', 'InnOuts', 'GS', 'G']].values
+train_y = training_salary_filled_null['salary'].values
+ 
+
+In [24]:
+
+lm = linear_model.Ridge()
+lm.fit(train_X, train_y)
+Out[24]:
+Ridge(alpha=1.0, copy_X=True, fit_intercept=True, max_iter=None,
+   normalize=False, solver='auto', tol=0.001)
+In [25]:
+
+print 'R-Squared:',lm.score(train_X, train_y)
+R-Squared: 0.277867939329
+In [26]:
+
+print 'MSE:',metrics.mean_squared_error(lm.predict(train_X), train_y)
+MSE: 6.42412037146e+12
+In [27]:
+
+test
+Out[27]:
+playerID	yearID	teamID	birthYear	birthMonth	birthDay	birthCountry	birthState	birthCity	deathYear	...	SB_fielding	WP_fielding	PB	DP	E	A	PO	InnOuts	GS	G
+0	aardsda01	2013	NYN	1981	12	27	USA	CO	Denver	NaN	...	NaN	NaN	NaN	0	0	5	1	119	0	43
+1	abadfe01	2013	WAS	1985	12	17	D.R.	La Romana	La Romana	NaN	...	NaN	NaN	NaN	0	0	4	1	113	0	39
+2	abreuto01	2013	SFN	1984	11	13	D.R.	Puerto Plata	Puerto Plata	NaN	...	NaN	NaN	NaN	15	3	66	47	754	25	36
+3	aceveal01	2013	BOS	1982	12	8	Mexico	Sonora	San Luis Rio Colorado	NaN	...	NaN	NaN	NaN	0	2	7	2	111	6	11
+4	ackledu01	2013	SEA	1988	2	26	USA	NC	Winston-Salem	NaN	...	NaN	NaN	NaN	31	1	152	226	2850	103	120
+5	adamsda02	2013	NYA	1987	5	15	USA	FL	Margate	NaN	...	NaN	NaN	NaN	12	1	76	56	1020	38	44
+6	adamsma01	2013	SLN	1988	8	31	USA	PA	Philipsburg	NaN	...	NaN	NaN	NaN	70	2	50	598	1793	63	74
+7	adamsmi03	2013	PHI	1978	7	29	USA	TX	Corpus Christi	NaN	...	NaN	NaN	NaN	0	1	3	5	75	0	28
+8	adducji02	2013	TEX	1985	5	15	CAN	BC	Burnaby	NaN	...	NaN	NaN	NaN	3	1	0	22	186	7	12
+9	adriaeh01	2013	SFN	1989	8	21	Venezuela	Miranda	Guarenas	NaN	...	NaN	NaN	NaN	4	1	12	4	135	4	6
+10	affelje01	2013	SFN	1979	6	6	USA	AZ	Phoenix	NaN	...	NaN	NaN	NaN	0	0	9	1	101	0	39
+11	alberan01	2013	MIN	1985	10	6	CAN	SK	North Battleford	NaN	...	NaN	NaN	NaN	1	0	9	4	180	10	10
+12	alberma01	2013	CLE	1983	1	20	USA	TX	Houston	NaN	...	NaN	NaN	NaN	1	1	11	4	189	0	56
+13	albural01	2013	DET	1986	6	10	D.R.	San Pedro de Macoris	San Pedro de Macoris	NaN	...	NaN	NaN	NaN	0	1	2	4	147	0	53
+14	allenco01	2013	CLE	1988	11	20	USA	FL	Orlando	NaN	...	NaN	NaN	NaN	0	3	5	0	211	0	77
+15	almonab01	2013	SEA	1989	6	27	D.R.	Distrito Nacional	Santo Domingo	NaN	...	NaN	NaN	NaN	0	4	1	32	473	17	22
+16	almonzo01	2013	NYA	1989	6	10	D.R.	Distrito Nacional	Santo Domingo	NaN	...	NaN	NaN	NaN	0	0	0	56	717	27	28
+17	alonsyo01	2013	SDN	1987	4	8	Cuba	La Habana	La Habana	NaN	...	NaN	NaN	NaN	72	3	58	761	2313	86	92
+18	altuvjo01	2013	HOU	1990	5	6	Venezuela	Aragua	Maracay	NaN	...	NaN	NaN	NaN	114	9	393	273	3785	145	145
+19	alvarhe01	2013	MIA	1990	4	18	Venezuela	Carabobo	Valencia	NaN	...	NaN	NaN	NaN	1	1	19	14	308	17	17
+20	alvarjo02	2013	DET	1989	5	6	Venezuela	Anzoategui	Barcelona	NaN	...	NaN	NaN	NaN	0	0	3	0	116	6	14
+21	alvarpe01	2013	PIT	1987	2	6	D.R.	Distrito Nacional	Santo Domingo	NaN	...	NaN	NaN	NaN	27	27	359	72	3985	148	150
+22	amarial01	2013	SDN	1989	4	6	Venezuela	Anzoategui	Barcelona	NaN	...	NaN	NaN	NaN	17	5	84	214	2458	84	143
+23	ambrihe01	2013	HOU	1984	5	24	USA	CA	Orange	NaN	...	NaN	NaN	NaN	1	0	9	1	109	0	43
+24	amesst01	2013	MIA	1988	3	15	USA	WA	Vancouver	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+25	anderbr04	2013	OAK	1988	2	1	USA	TX	Midland	NaN	...	NaN	NaN	NaN	0	0	4	0	134	5	16
+26	anderbr05	2013	CHA	1986	12	16	USA	CA	Thousand Oaks	NaN	...	3	5	0	0	1	2	49	162	6	10
+27	andinro01	2013	SEA	1984	4	25	USA	FL	Miami	NaN	...	NaN	NaN	NaN	17	2	61	28	607	22	30
+28	andruel01	2013	TEX	1988	8	26	Venezuela	Aragua	Maracay	NaN	...	NaN	NaN	NaN	97	14	362	212	3866	145	146
+29	ankieri01	2013	HOU	1979	7	19	USA	FL	Fort Pierce	NaN	...	NaN	NaN	NaN	0	2	3	42	464	16	22
+...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+1379	woodal02	2013	ATL	1991	1	12	USA	NC	Charlotte	NaN	...	NaN	NaN	NaN	0	0	13	0	233	11	31
+1380	woodbl01	2013	CLE	1985	8	8	USA	GA	Atlanta	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+1381	woodtr01	2013	CHN	1987	2	6	USA	AR	Little Rock	NaN	...	NaN	NaN	NaN	0	1	14	20	600	32	32
+1382	wootero01	2013	MIL	1985	7	21	USA	NC	Goldsboro	NaN	...	NaN	NaN	NaN	0	0	3	0	83	0	27
+1383	workmbr01	2013	BOS	1988	8	13	USA	TX	Arlington	NaN	...	NaN	NaN	NaN	0	0	1	0	125	3	20
+1384	worleva01	2013	MIN	1987	9	25	USA	CA	Sacramento	NaN	...	NaN	NaN	NaN	1	1	11	2	146	10	10
+1385	worthda01	2013	DET	1985	9	30	USA	CA	Northridge	NaN	...	NaN	NaN	NaN	0	1	3	0	18	0	2
+1386	wrighda03	2013	NYN	1982	12	20	USA	VA	Norfolk	NaN	...	NaN	NaN	NaN	18	9	235	86	3010	111	111
+1387	wrighja01	2013	TBA	1974	12	24	USA	OK	Oklahoma City	NaN	...	NaN	NaN	NaN	2	0	13	8	210	1	66
+1388	wrighst01	2013	BOS	1984	8	30	USA	CA	Torrance	NaN	...	NaN	NaN	NaN	0	0	1	0	40	1	4
+1389	wrighwe01	2013	HOU	1985	1	28	USA	AL	Montgomery	NaN	...	NaN	NaN	NaN	0	0	8	2	124	0	54
+1390	wrighwe01	2013	TBA	1985	1	28	USA	AL	Montgomery	NaN	...	NaN	NaN	NaN	0	0	2	0	37	0	16
+1391	yelicch01	2013	MIA	1991	12	5	USA	CA	Thousand Oaks	NaN	...	NaN	NaN	NaN	0	0	0	114	1633	61	64
+1392	youklke01	2013	NYA	1979	3	15	USA	OH	Cincinnati	NaN	...	NaN	NaN	NaN	2	3	26	57	694	26	28
+1393	youngch04	2013	OAK	1983	9	5	USA	TX	Houston	NaN	...	NaN	NaN	NaN	0	2	2	240	2218	78	104
+1394	youngde03	2013	TBA	1985	9	14	USA	AL	Birmingham	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+1395	youngde03	2013	PHI	1985	9	14	USA	AL	Birmingham	NaN	...	NaN	NaN	NaN	2	5	4	115	1507	64	64
+1396	younger03	2013	COL	1985	5	25	USA	NJ	New Brunswick	NaN	...	NaN	NaN	NaN	0	2	0	58	870	32	37
+1397	younger03	2013	NYN	1985	5	25	USA	NJ	New Brunswick	NaN	...	NaN	NaN	NaN	1	2	11	182	2418	90	99
+1398	youngmi02	2013	LAN	1976	10	19	USA	CA	Covina	NaN	...	NaN	NaN	NaN	5	1	15	28	271	9	18
+1399	youngmi02	2013	PHI	1976	10	19	USA	CA	Covina	NaN	...	NaN	NaN	NaN	29	9	174	234	3092	118	125
+1400	zagurmi01	2013	NYA	1983	1	27	USA	NE	Omaha	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+1401	zagurmi01	2013	PIT	1983	1	27	USA	NE	Omaha	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+1402	zeidjo01	2013	HOU	1987	3	24	USA	CT	New Haven	NaN	...	NaN	NaN	NaN	0	1	5	2	83	0	25
+1403	zieglbr01	2013	ARI	1979	10	10	USA	KS	Pratt	NaN	...	NaN	NaN	NaN	0	2	21	3	219	0	78
+1404	zimmejo02	2013	WAS	1986	5	23	USA	WI	Auburndale	NaN	...	NaN	NaN	NaN	1	2	28	12	640	32	32
+1405	zimmery01	2013	WAS	1984	9	28	USA	NC	Washington	NaN	...	NaN	NaN	NaN	28	21	260	98	3737	141	141
+1406	zitoba01	2013	SFN	1978	5	13	USA	NV	Las Vegas	NaN	...	NaN	NaN	NaN	0	0	20	3	400	25	30
+1407	zobribe01	2013	TBA	1981	5	26	USA	IL	Eureka	NaN	...	NaN	NaN	NaN	79	5	373	278	4127	154	189
+1408	zuninmi01	2013	SEA	1991	3	25	USA	FL	Cape Coral	NaN	...	28	25	2	1	2	22	363	1289	48	50
+1409 rows × 90 columns
+In [41]:
+
+test1 = test.fillna(0)
+In [42]:
+
+test1['BFP']
+Out[42]:
+0     178
+1     166
+2       0
+3     169
+4       0
+5       0
+6       0
+7     107
+8       0
+9       0
+10    146
+11    249
+12    262
+13    220
+14    301
+...
+1394      0
+1395      0
+1396      0
+1397      0
+1398      0
+1399      0
+1400      3
+1401     37
+1402    118
+1403    297
+1404    865
+1405      0
+1406    608
+1407      0
+1408      0
+Name: BFP, Length: 1409, dtype: float64
+In [43]:
+
+test_X = test1[['weight', 'height', 'G_all', 'G_defense', 'G_p', 'G_c', 'G_1b', 'G_2b', 'G_3b', 'G_ss', 'G_lf', 'G_cf', 'G_rf', 'G_of', 'AB', 'R_batting', 'H_batting', '2B', '3B', 'HR_batting', 'RBI', 'SB_batting', 'CS_batting', 'BB_batting', 'SO_batting', 'IBB_batting', 'HBP_batting', 'SH_batting', 'SF_batting', 'GIDP_batting', 'W', 'L', 'CG', 'SHO', 'SV', 'IPouts', 'H_pitching', 'ER', 'HR_pitching', 'BB_pitching', 'SO_pitching', 'IBB_pitching', 'WP_pitching', 'HBP_pitching', 'BK', 'BFP', 'GF', 'R_pitching', 'CS_fielding', 'SB_fielding', 'WP_fielding', 'PB', 'DP', 'E', 'A', 'PO', 'InnOuts', 'GS', 'G']].values
+In [49]:
+
+test_X[0]
+Out[49]:
+array([205.0, 75.0, '43.0', '43.0', 43.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0, 119.0, 39.0,
+       19.0, 7.0, 19.0, 36.0, 6.0, 1.0, 4.0, 1.0, 178.0, 7.0, 20.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 1.0, 119.0, 0.0, 43.0], dtype=object)
+In [ ]:
+
+# find test1 columns "G_all'and 'G_defense"are objects.,  since it contains pre-league
+# need to correct back to float
+In [50]:
+
+test1[['G_all', 'G_defense']]
+Out[50]:
+G_all	G_defense
+0	43.0	43.0
+1	39.0	39.0
+2	53.0	36.0
+3	11.0	11.0
+4	113.0	111.0
+5	43.0	42.0
+6	108.0	74.0
+7	28.0	28.0
+8	17.0	10.0
+9	9.0	6.0
+10	39.0	39.0
+11	10.0	10.0
+12	56.0	56.0
+13	53.0	53.0
+14	77.0	77.0
+15	25.0	23.0
+16	34.0	28.0
+17	97.0	92.0
+18	152.0	145.0
+19	17.0	17.0
+20	14.0	14.0
+21	152.0	150.0
+22	146.0	131.0
+23	43.0	43.0
+24	4.0	4.0
+25	16.0	16.0
+26	10.0	10.0
+27	29.0	28.0
+28	156.0	146.0
+29	pre-league	pre-league
+...	...	...
+1379	31.0	31.0
+1380	2.0	2.0
+1381	37.0	32.0
+1382	27.0	27.0
+1383	20.0	20.0
+1384	10.0	10.0
+1385	3.0	2.0
+1386	112.0	111.0
+1387	66.0	66.0
+1388	4.0	4.0
+1389	pre-league	pre-league
+1390	pre-league	pre-league
+1391	62.0	62.0
+1392	28.0	26.0
+1393	107.0	96.0
+1394	pre-league	pre-league
+1395	pre-league	pre-league
+1396	pre-league	pre-league
+1397	pre-league	pre-league
+1398	pre-league	pre-league
+1399	pre-league	pre-league
+1400	pre-league	pre-league
+1401	pre-league	pre-league
+1402	25.0	25.0
+1403	78.0	78.0
+1404	32.0	32.0
+1405	147.0	141.0
+1406	30.0	30.0
+1407	157.0	155.0
+1408	52.0	50.0
+1409 rows × 2 columns
+In [55]:
+
+test1['G_all'][test1['G_all'] == 'pre-league'] = 0
+In [57]:
+
+test1['G_defense'][test1['G_defense'] == 'pre-league'] = 0
+In [58]:
+
+#test1[['G_all', 'G_defense']]
+test1[['G_all', 'G_defense']]
+Out[58]:
+G_all	G_defense
+0	43.0	43.0
+1	39.0	39.0
+2	53.0	36.0
+3	11.0	11.0
+4	113.0	111.0
+5	43.0	42.0
+6	108.0	74.0
+7	28.0	28.0
+8	17.0	10.0
+9	9.0	6.0
+10	39.0	39.0
+11	10.0	10.0
+12	56.0	56.0
+13	53.0	53.0
+14	77.0	77.0
+15	25.0	23.0
+16	34.0	28.0
+17	97.0	92.0
+18	152.0	145.0
+19	17.0	17.0
+20	14.0	14.0
+21	152.0	150.0
+22	146.0	131.0
+23	43.0	43.0
+24	4.0	4.0
+25	16.0	16.0
+26	10.0	10.0
+27	29.0	28.0
+28	156.0	146.0
+29	0	0
+...	...	...
+1379	31.0	31.0
+1380	2.0	2.0
+1381	37.0	32.0
+1382	27.0	27.0
+1383	20.0	20.0
+1384	10.0	10.0
+1385	3.0	2.0
+1386	112.0	111.0
+1387	66.0	66.0
+1388	4.0	4.0
+1389	0	0
+1390	0	0
+1391	62.0	62.0
+1392	28.0	26.0
+1393	107.0	96.0
+1394	0	0
+1395	0	0
+1396	0	0
+1397	0	0
+1398	0	0
+1399	0	0
+1400	0	0
+1401	0	0
+1402	25.0	25.0
+1403	78.0	78.0
+1404	32.0	32.0
+1405	147.0	141.0
+1406	30.0	30.0
+1407	157.0	155.0
+1408	52.0	50.0
+1409 rows × 2 columns
+In [59]:
+
+test_X = test1[['weight', 'height', 'G_all', 'G_defense', 'G_p', 'G_c', 'G_1b', 'G_2b', 'G_3b', 'G_ss', 'G_lf', 'G_cf', 'G_rf', 'G_of', 'AB', 'R_batting', 'H_batting', '2B', '3B', 'HR_batting', 'RBI', 'SB_batting', 'CS_batting', 'BB_batting', 'SO_batting', 'IBB_batting', 'HBP_batting', 'SH_batting', 'SF_batting', 'GIDP_batting', 'W', 'L', 'CG', 'SHO', 'SV', 'IPouts', 'H_pitching', 'ER', 'HR_pitching', 'BB_pitching', 'SO_pitching', 'IBB_pitching', 'WP_pitching', 'HBP_pitching', 'BK', 'BFP', 'GF', 'R_pitching', 'CS_fielding', 'SB_fielding', 'WP_fielding', 'PB', 'DP', 'E', 'A', 'PO', 'InnOuts', 'GS', 'G']].values
+In [62]:
+
+test_X[0]
+Out[62]:
+array([205.0, 75.0, '43.0', '43.0', 43.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0, 119.0, 39.0,
+       19.0, 7.0, 19.0, 36.0, 6.0, 1.0, 4.0, 1.0, 178.0, 7.0, 20.0, 0.0,
+       0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 1.0, 119.0, 0.0, 43.0], dtype=object)
+In [68]:
+
+test1[['G_all', 'G_defense']] = test1[['G_all', 'G_defense']].astype(float)
+In [70]:
+
+test_X = test1[['weight', 'height', 'G_all', 'G_defense', 'G_p', 'G_c', 'G_1b', 'G_2b', 'G_3b', 'G_ss', 'G_lf', 'G_cf', 'G_rf', 'G_of', 'AB', 'R_batting', 'H_batting', '2B', '3B', 'HR_batting', 'RBI', 'SB_batting', 'CS_batting', 'BB_batting', 'SO_batting', 'IBB_batting', 'HBP_batting', 'SH_batting', 'SF_batting', 'GIDP_batting', 'W', 'L', 'CG', 'SHO', 'SV', 'IPouts', 'H_pitching', 'ER', 'HR_pitching', 'BB_pitching', 'SO_pitching', 'IBB_pitching', 'WP_pitching', 'HBP_pitching', 'BK', 'BFP', 'GF', 'R_pitching', 'CS_fielding', 'SB_fielding', 'WP_fielding', 'PB', 'DP', 'E', 'A', 'PO', 'InnOuts', 'GS', 'G']].values
+In [72]:
+
+test_X[0]
+Out[72]:
+array([ 205.,   75.,   43.,   43.,   43.,    0.,    0.,    0.,    0.,
+          0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,
+          0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,    0.,
+          0.,    0.,    0.,    2.,    2.,    0.,    0.,    0.,  119.,
+         39.,   19.,    7.,   19.,   36.,    6.,    1.,    4.,    1.,
+        178.,    7.,   20.,    0.,    0.,    0.,    0.,    0.,    0.,
+          5.,    1.,  119.,    0.,   43.])
+In [73]:
+
+lm.predict(test_X)
+Out[73]:
+array([  858146.66565007,  1472202.60603419,   855048.61783239, ...,
+        2484403.28080401,  3637984.76417766,  1971181.57072476])
+In [74]:
+
+test1['predicted'] = lm.predict(test_X)
+In [76]:
+
+test1.count()
+Out[76]:
+playerID        1409
+yearID          1409
+teamID          1409
+birthYear       1409
+birthMonth      1409
+birthDay        1409
+birthCountry    1409
+birthState      1409
+birthCity       1409
+deathYear       1409
+deathMonth      1409
+deathDay        1409
+deathCountry    1409
+deathState      1409
+deathCity       1409
+...
+SH_pitching      1409
+SF_pitching      1409
+GIDP_pitching    1409
+CS_fielding      1409
+SB_fielding      1409
+WP_fielding      1409
+PB               1409
+DP               1409
+E                1409
+A                1409
+PO               1409
+InnOuts          1409
+GS               1409
+G                1409
+predicted        1409
+Length: 91, dtype: int64
+In [77]:
+
+test1.to_csv('baseball_test_predict.csv')
